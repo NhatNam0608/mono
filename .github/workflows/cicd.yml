@@ -1,71 +1,65 @@
-  name: CI/CD Monorepo FastAPI Services
+name: CI/CD Monorepo FastAPI Services
 
-  on:
-    push:
-      paths:
-        - 'service_a/**'
-        - 'service_b/**'
+on:
+  push:
+    paths:
+      - 'service_*/**'
 
-  jobs:
-    detect-service:
-      runs-on: ubuntu-latest
-      outputs:
-        changed_service: ${{ steps.detect.outputs.changed_service }}
+jobs:
+  detect-services:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
 
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-        - name: Detect changed service
-          id: detect
-          run: |
-            echo "Checking changed files..."
-            git fetch origin main
-            BASE=$(git merge-base HEAD origin/main)
-            CHANGED=$(git diff --name-only $BASE HEAD)
-            echo "Changed files: $CHANGED"
+      - name: Detect changed services
+        id: set-matrix
+        run: |
+          echo "Fetching changes..."
+          git fetch origin main
+          BASE=$(git merge-base HEAD origin/main)
+          CHANGED=$(git diff --name-only $BASE HEAD)
+          echo "Changed files: $CHANGED"
 
-            SERVICE=""
-            if echo "$CHANGED" | grep -q "^service_a/"; then
-              SERVICE="service_a"
-            elif echo "$CHANGED" | grep -q "^service_b/"; then
-              SERVICE="service_b"
-            fi
+          SERVICES=$(echo "$CHANGED" | grep -oE "^service_[^/]+" | sort -u | uniq)
+          
+          if [ -z "$SERVICES" ]; then
+            echo "No relevant services changed."
+            echo "matrix=[]" >> $GITHUB_OUTPUT
+            exit 0
+          fi
 
-            if [ -z "$SERVICE" ]; then
-              echo "No relevant changes detected. Exiting..."
-              echo "changed_service=none" >> $GITHUB_OUTPUT
-              exit 0
-            fi
+          MATRIX_JSON=$(printf '%s\n' $SERVICES | jq -R . | jq -s '{"service": .}')
+          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+          echo "Detected matrix: $MATRIX_JSON"
 
-            echo "Changed service: $SERVICE"
-            echo "changed_service=$SERVICE" >> $GITHUB_OUTPUT
+  build-and-deploy:
+    needs: detect-services
+    if: needs.detect-services.outputs.matrix != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.detect-services.outputs.matrix)}}
 
-    build-and-deploy:
-      needs: detect-service
-      if: needs.detect-service.outputs.changed_service != 'none'
-      runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-        - name: Set up Docker Buildx
-          uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub (mock)
+        run: echo "Skipping login (mock)"
 
-        - name: Login to Docker Hub (mock)
-          run: echo "Skipping login (mock only)"  # Add real login if needed
+      - name: Build Docker image
+        run: |
+          echo "Building: ${{ matrix.service }}"
+          docker build -t ${{ matrix.service }}:latest ./${{ matrix.service }}
 
-        - name: Build Docker image
-          run: |
-            SERVICE=${{ needs.detect-service.outputs.changed_service }}
-            echo "Building service: $SERVICE"
-            docker build -t $SERVICE:latest ./$SERVICE
+      - name: Push Docker image (mock)
+        run: echo "Skipping push (mock)"
 
-        - name: Push Docker image (mock)
-          run: echo "Skipping push to registry (mock only)"
-
-        - name: Deploy to Azure Container Apps (mock)
-          run: |
-            SERVICE=${{ needs.detect-service.outputs.changed_service }}
-            echo "Deploying $SERVICE to Azure (mock)"
+      - name: Deploy to Azure Container Apps (mock)
+        run: echo "Deploying ${{ matrix.service }} (mock)"
