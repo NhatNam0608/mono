@@ -2,8 +2,8 @@ name: CI/CD Monorepo FastAPI Services
 
 on:
   push:
-    paths:
-      - 'service_*/**'
+    branches:
+      - main
 
 jobs:
   detect-services:
@@ -15,19 +15,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Detect changed services
+      - name: Detect services from commit message
         id: set-matrix
         run: |
-          echo "Fetching changes..."
-          git fetch origin main
-          BASE=$(git merge-base HEAD origin/main)
-          CHANGED=$(git diff --name-only $BASE HEAD)
-          echo "Changed files: $CHANGED"
+          echo "Getting commit message..."
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "Commit message: $COMMIT_MSG"
 
-          SERVICES=$(echo "$CHANGED" | grep -oE "^service_[^/]+" | sort -u | uniq)
-          
+          # Extract service names like "service_x" before "@"
+          SERVICES=$(echo "$COMMIT_MSG" | grep -oE 'service_[a-zA-Z0-9_-]+(?=@)' | sort -u)
+
           if [ -z "$SERVICES" ]; then
-            echo "No relevant services changed."
+            echo "No services found in commit message."
             echo "matrix=[]" >> $GITHUB_OUTPUT
             exit 0
           fi
@@ -55,7 +54,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          echo "Building: ${{ matrix.service }}"
+          echo "Building service: ${{ matrix.service }}"
           docker build -t ${{ matrix.service }}:latest ./${{ matrix.service }}
 
       - name: Push Docker image (mock)
