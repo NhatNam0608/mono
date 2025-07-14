@@ -31,8 +31,8 @@ jobs:
 
       - name: Push image to Docker Hub
         run: |
-          docker tag service_a:latest yourdockerhub/service_a:latest
-          docker push yourdockerhub/service_a:latest
+          docker tag service_a:latest nhatnam0608/service_a:latest
+          docker push nhatnam0608/service_a:latest
 
 
   build-service-b:
@@ -57,5 +57,5 @@ jobs:
 
       - name: Push image to Docker Hub
         run: |
-          docker tag service_a:latest yourdockerhub/service_b:latest
-          docker push yourdockerhub/service_b:latest
+          docker tag service_a:latest nhatnam0608/service_b:latest
+          docker push nhatnam0608/service_b:latest
