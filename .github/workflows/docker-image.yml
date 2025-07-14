@@ -31,7 +31,6 @@ jobs:
           docker tag service_a:latest nhatnam0608/service_a:latest
           docker push nhatnam0608/service_a:latest
 
-
   build-service-b:
     if: startsWith(github.ref, 'refs/tags/build-service-b') || startsWith(github.ref, 'refs/tags/build-all')
     name: Build Service B
