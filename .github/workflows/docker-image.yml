@@ -71,13 +71,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          fetch-depth: 2  
 
       - name: Get list of changed files
         id: diff
         run: |
-          git fetch origin main
-          CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+          PREV_COMMIT=$(git rev-parse HEAD^)
+          CURR_COMMIT=$(git rev-parse HEAD)
+          
+          echo "Comparing commits: $PREV_COMMIT..$CURR_COMMIT"
+
+          CHANGED_FILES=$(git diff --name-only $PREV_COMMIT $CURR_COMMIT)
 
           echo "Changed files:"
           echo "$CHANGED_FILES"
@@ -93,3 +97,4 @@ jobs:
           else
             echo "service_b=false" >> $GITHUB_OUTPUT
           fi
+
