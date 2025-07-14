@@ -12,6 +12,7 @@ jobs:
   build-service-a:
     name: Build Service A
     runs-on: ubuntu-latest
+    needs: check-changes
     if: needs.check-changes.outputs.service_a_changed == 'true'
 
     steps:
@@ -38,6 +39,7 @@ jobs:
   build-service-b:
     name: Build Service B
     runs-on: ubuntu-latest
+    needs: check-changes
     if: needs.check-changes.outputs.service_b_changed == 'true'
 
     steps:
