@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - 'build-*'  
-
-      
 jobs:
   build-service-a:
     if: startsWith(github.ref, 'refs/tags/build-service-a') || startsWith(github.ref, 'refs/tags/build-all')
