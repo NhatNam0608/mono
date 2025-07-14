@@ -57,5 +57,5 @@ jobs:
 
       - name: Push image to Docker Hub
         run: |
-          docker tag service_a:latest nhatnam0608/service_b:latest
+          docker tag service_b:latest nhatnam0608/service_b:latest
           docker push nhatnam0608/service_b:latest
