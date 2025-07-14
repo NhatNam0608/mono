@@ -2,13 +2,17 @@ name: CI/CD Pipeline
 
 on:
   push:
-    tags:
-      - 'build-*'  
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
 jobs:
   build-service-a:
-    if: startsWith(github.ref, 'refs/tags/build-service-a') || startsWith(github.ref, 'refs/tags/build-all')
     name: Build Service A
     runs-on: ubuntu-latest
+    if: needs.check-changes.outputs.service_a_changed == 'true'
 
     steps:
       - name: Checkout source code
@@ -32,9 +36,9 @@ jobs:
           docker push nhatnam0608/service_a:latest
 
   build-service-b:
-    if: startsWith(github.ref, 'refs/tags/build-service-b') || startsWith(github.ref, 'refs/tags/build-all')
     name: Build Service B
     runs-on: ubuntu-latest
+    if: needs.check-changes.outputs.service_b_changed == 'true'
 
     steps:
       - name: Checkout source code
@@ -56,3 +60,36 @@ jobs:
         run: |
           docker tag service_b:latest nhatnam0608/service_b:latest
           docker push nhatnam0608/service_b:latest
+
+  check-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      service_a_changed: ${{ steps.diff.outputs.service_a }}
+      service_b_changed: ${{ steps.diff.outputs.service_b }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get list of changed files
+        id: diff
+        run: |
+          git fetch origin main
+          CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          if echo "$CHANGED_FILES" | grep -q "^service_a/"; then
+            echo "service_a=true" >> $GITHUB_OUTPUT
+          else
+            echo "service_a=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q "^service_b/"; then
+            echo "service_b=true" >> $GITHUB_OUTPUT
+          else
+            echo "service_b=false" >> $GITHUB_OUTPUT
+          fi
