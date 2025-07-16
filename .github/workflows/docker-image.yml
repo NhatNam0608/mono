@@ -36,7 +36,10 @@ jobs:
         run: |
           docker tag service_a:latest ${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/service_a:latest
           docker push ${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/service_a:latest
-      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Deploy to Azure Container Apps
         uses: azure/CLI@v1
         with:
