@@ -36,6 +36,24 @@ jobs:
         run: |
           docker tag service_a:latest ${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/service_a:latest
           docker push ${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/service_a:latest
+      - name: Azure Login 
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Container Apps
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.30.0
+          inlineScript: |
+            az containerapp update \
+              --name service-a-app \
+              --resource-group NetworkWatcherRG \
+              --image ${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/service_a:latest \
+              --registry-server ${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io \
+              --registry-username ${{ secrets.AZURE_CLIENT_ID }} \
+              --registry-password ${{ secrets.AZURE_CLIENT_SECRET }}
+
 
   build-service-b:
     name: Build Service B
