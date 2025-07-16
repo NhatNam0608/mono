@@ -1,7 +1,7 @@
 from fastapi import FastAPI
-from utils import get_message  # Importing from the same directory
+from utils import get_message  
 app = FastAPI()
 
 @app.get("/")
 def read_root():
-    return {"message": get_message("message-from-service-a-adjusted-adjusted")}
+    return {"message": get_message("message-from-service-a")}
