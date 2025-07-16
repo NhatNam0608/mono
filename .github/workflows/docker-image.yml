@@ -46,7 +46,7 @@
 
         - name: Deploy to Azure Container Apps
           run: |
-            az containerapp update --name service-a-app --resource-group NetworkWatcherRG --image "${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/service_a:latest"
+            az containerapp update --name service-a-app --resource-group NetworkWatcherRG --image "${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/service_a:latest" --revision-suffix "rev-$(date +%s)"
 
 
     build-service-b:
