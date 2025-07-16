@@ -48,10 +48,7 @@ jobs:
           inlineScript: |
             az config set extension.use_dynamic_install=yes_without_prompt
             az extension add --name containerapp --upgrade
-            az containerapp update \
-              --name ${{ secrets.ACA_SERVICE_B_NAME }} \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-              --image nhatnam0608/service_b:latest
+            az containerapp update --name service-a-app --resource-group NetworkWatcherRG --image ${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/service_a:latest --registry-server ${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io --registry-username ${{ secrets.AZURE_CLIENT_ID }} --registry-password ${{ secrets.AZURE_CLIENT_SECRET }}
 
 
   build-service-b:
