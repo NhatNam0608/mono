@@ -45,6 +45,8 @@ jobs:
         with:
           azcliversion: 2.45.0
           inlineScript: |
+            export AZURE_CONFIG_DIR=/tmp/az_config
+            rm -f ~/.azure/msal_token_cache.bin  # FIX: Clear corrupt MSAL cache
             az extension add --name containerapp --upgrade
             az containerapp update --name service-a-app --resource-group NetworkWatcherRG --image "${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/service_a:latest"
 
