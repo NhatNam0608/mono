@@ -1,117 +1,115 @@
-name: CI/CD Pipeline
+  name: CI/CD Pipeline
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  on:
+    push:
+      branches:
+        - main
+    pull_request:
+      branches:
+        - main
 
-jobs:
-  build-service-a:
-    name: Build Service A
-    runs-on: ubuntu-latest
-    needs: check-changes
-    if: needs.check-changes.outputs.service_a_changed == 'true'
+  jobs:
+    build-service-a:
+      name: Build Service A
+      runs-on: ubuntu-latest
+      needs: check-changes
+      if: needs.check-changes.outputs.service_a_changed == 'true'
 
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v3
+      steps:
+        - name: Checkout source code
+          uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v2
 
-      - name: Build Docker image for service_a
-        run: docker build -t service_a:latest ./service_a
+        - name: Build Docker image for service_a
+          run: docker build -t service_a:latest ./service_a
 
-      - name: Log in to Azure Container Registry
-        uses: azure/docker-login@v1
-        with:
-          login-server: ${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io
-          username: ${{ secrets.AZURE_CLIENT_ID }}
-          password: ${{ secrets.AZURE_CLIENT_SECRET }}
+        - name: Log in to Azure Container Registry
+          uses: azure/docker-login@v1
+          with:
+            login-server: ${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io
+            username: ${{ secrets.AZURE_CLIENT_ID }}
+            password: ${{ secrets.AZURE_CLIENT_SECRET }}
 
-      - name: Push image to Azure Container Registry
-        run: |
-          docker tag service_a:latest ${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/service_a:latest
-          docker push ${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/service_a:latest
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Deploy to Azure Container Apps
-        uses: azure/CLI@v1
-        with:
-          azcliversion: 2.45.0
-          inlineScript: |
-            export AZURE_CONFIG_DIR=/tmp/az_config
-            rm -f ~/.azure/msal_token_cache.bin  # FIX: Clear corrupt MSAL cache
-            az extension add --name containerapp --upgrade
+        - name: Push image to Azure Container Registry
+          run: |
+            docker tag service_a:latest ${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/service_a:latest
+            docker push ${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/service_a:latest
+        - name: Azure Login
+          uses: azure/login@v1
+          with:
+            creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+        - name: Install Azure CLI containerapp extension
+          run: az extension add --name containerapp --upgrade
+
+        - name: Deploy to Azure Container Apps
+          run: |
             az containerapp update --name service-a-app --resource-group NetworkWatcherRG --image "${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/service_a:latest"
 
 
-  build-service-b:
-    name: Build Service B
-    runs-on: ubuntu-latest
-    needs: check-changes
-    if: needs.check-changes.outputs.service_b_changed == 'true'
+    build-service-b:
+      name: Build Service B
+      runs-on: ubuntu-latest
+      needs: check-changes
+      if: needs.check-changes.outputs.service_b_changed == 'true'
 
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v3
+      steps:
+        - name: Checkout source code
+          uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v2
 
-      - name: Build Docker image for service_b
-        run: docker build -t service_b:latest ./service_b
+        - name: Build Docker image for service_b
+          run: docker build -t service_b:latest ./service_b
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+        - name: Log in to Docker Hub
+          uses: docker/login-action@v2
+          with:
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Push image to Docker Hub
-        run: |
-          docker tag service_b:latest nhatnam0608/service_b:latest
-          docker push nhatnam0608/service_b:latest
+        - name: Push image to Docker Hub
+          run: |
+            docker tag service_b:latest nhatnam0608/service_b:latest
+            docker push nhatnam0608/service_b:latest
 
-  check-changes:
-    name: Detect Changes
-    runs-on: ubuntu-latest
-    outputs:
-      service_a_changed: ${{ steps.diff.outputs.service_a }}
-      service_b_changed: ${{ steps.diff.outputs.service_b }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 2  
+    check-changes:
+      name: Detect Changes
+      runs-on: ubuntu-latest
+      outputs:
+        service_a_changed: ${{ steps.diff.outputs.service_a }}
+        service_b_changed: ${{ steps.diff.outputs.service_b }}
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
+          with:
+            fetch-depth: 2  
 
-      - name: Get list of changed files
-        id: diff
-        run: |
-          PREV_COMMIT=$(git rev-parse HEAD^)
-          CURR_COMMIT=$(git rev-parse HEAD)
-          
-          echo "Comparing commits: $PREV_COMMIT..$CURR_COMMIT"
+        - name: Get list of changed files
+          id: diff
+          run: |
+            PREV_COMMIT=$(git rev-parse HEAD^)
+            CURR_COMMIT=$(git rev-parse HEAD)
+            
+            echo "Comparing commits: $PREV_COMMIT..$CURR_COMMIT"
 
-          CHANGED_FILES=$(git diff --name-only $PREV_COMMIT $CURR_COMMIT)
+            CHANGED_FILES=$(git diff --name-only $PREV_COMMIT $CURR_COMMIT)
 
-          echo "Changed files:"
-          echo "$CHANGED_FILES"
+            echo "Changed files:"
+            echo "$CHANGED_FILES"
 
-          if echo "$CHANGED_FILES" | grep -q "^service_a/"; then
-            echo "service_a=true" >> $GITHUB_OUTPUT
-          else
-            echo "service_a=false" >> $GITHUB_OUTPUT
-          fi
+            if echo "$CHANGED_FILES" | grep -q "^service_a/"; then
+              echo "service_a=true" >> $GITHUB_OUTPUT
+            else
+              echo "service_a=false" >> $GITHUB_OUTPUT
+            fi
 
-          if echo "$CHANGED_FILES" | grep -q "^service_b/"; then
-            echo "service_b=true" >> $GITHUB_OUTPUT
-          else
-            echo "service_b=false" >> $GITHUB_OUTPUT
-          fi
+            if echo "$CHANGED_FILES" | grep -q "^service_b/"; then
+              echo "service_b=true" >> $GITHUB_OUTPUT
+            else
+              echo "service_b=false" >> $GITHUB_OUTPUT
+            fi
 
