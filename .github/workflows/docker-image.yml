@@ -43,7 +43,7 @@ jobs:
       - name: Deploy to Azure Container Apps
         uses: azure/CLI@v1
         with:
-          azcliversion: 2.30.0
+          azcliversion: 2.45.0
           inlineScript: |
             az extension add --name containerapp --upgrade
             az containerapp update --name service-a-app --resource-group NetworkWatcherRG --image "${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/service_a:latest"
