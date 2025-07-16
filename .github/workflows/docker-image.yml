@@ -44,7 +44,7 @@ jobs:
       - name: Deploy to Azure Container Apps
         uses: azure/CLI@v1
         with:
-          azcliversion: 2.30.0
+          azcliversion: 2.45.0
           inlineScript: |
             az containerapp update \
               --name service-a-app \
