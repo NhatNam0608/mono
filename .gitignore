@@ -2,3 +2,9 @@ __pycache__/
 venv/
 .env/
 .vscode/
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.log
+*.backup
